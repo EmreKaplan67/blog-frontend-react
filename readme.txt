@@ -1,0 +1,1 @@
+This the frontend of the blog fastapi application
