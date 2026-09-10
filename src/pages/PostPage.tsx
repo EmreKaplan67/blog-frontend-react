@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import type { Post } from "../types";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 function PostPage() {
   const { slug } = useParams<{ slug: string }>();
 
@@ -16,7 +18,7 @@ function PostPage() {
       return;
     }
 
-    fetch(`http://localhost:8000/posts/${slug}`)
+    fetch(`${API_URL}/posts/${slug}`)
       .then((response) => {
         if (!response.ok) {
           throw new Error("Failed to fetch post");

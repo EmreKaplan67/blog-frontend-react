@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import PostCard from "../components/PostCard";
 import type { Post } from "../types";
 
+const API_URL = import.meta.env.VITE_API_URL
+
 function BlogPage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
@@ -11,7 +13,7 @@ function BlogPage() {
 
   const fetchPosts = async (offset: number) => {
     const response = await fetch(
-      `http://localhost:8000/posts?limit=10&offset=${offset}`
+      `${API_URL}/posts?limit=10&offset=${offset}`
     );
 
     if (!response.ok) {
