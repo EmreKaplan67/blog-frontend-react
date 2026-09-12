@@ -3,6 +3,7 @@ export type Post = {
   title: string;
   slug: string;
   content: string;
+  status: string;
   image_url: string | null;
   created_at: string;
   updated_at: string;

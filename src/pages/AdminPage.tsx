@@ -10,7 +10,7 @@ function AdminPage() {
   const [loading, setLoading] = useState(true);
 
   const fetchPosts = async () => {
-    const response = await apiFetch("/posts?limit=50&offset=0");
+    const response = await apiFetch("/admin/posts?limit=50&offset=0");
 
     if (!response.ok) {
       throw new Error("Failed to fetch posts");
@@ -62,13 +62,58 @@ function AdminPage() {
     navigate("/login", { replace: true });
   };
 
+  const publishedPosts = posts.filter(
+    (post) => post.status === "published",
+  );
+
+  const draftPosts = posts.filter(
+    (post) => post.status === "draft",
+  );
+
+  const renderPost = (post: Post) => (
+    <article
+      key={post.id}
+      className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition hover:border-amber-200 hover:shadow-md sm:p-6"
+    >
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h3 className="font-semibold text-slate-900">{post.title}</h3>
+
+          <p className="mt-2 text-sm text-slate-500">
+            {new Date(post.created_at).toLocaleDateString()}
+          </p>
+        </div>
+
+        <div className="flex gap-2">
+          <button
+            onClick={() => navigate(`/admin/posts/${post.id}/edit`)}
+            className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-900 hover:text-slate-900"
+          >
+            Edit
+          </button>
+
+          <button
+            onClick={() => handleDelete(post.id)}
+            className="rounded-full border border-red-100 px-4 py-2 text-sm font-semibold text-red-600 transition hover:border-red-200 hover:bg-red-50"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    </article>
+  );
+
   return (
     <main className="min-h-screen bg-slate-100">
       <header className="border-b border-slate-200 bg-white/90 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5 sm:px-8">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.24em] text-amber-600">Field notes</p>
-            <h1 className="mt-1 text-xl font-bold tracking-tight text-slate-900">Admin Dashboard</h1>
+            <p className="text-xs font-bold uppercase tracking-[0.24em] text-amber-600">
+              Field notes
+            </p>
+            <h1 className="mt-1 text-xl font-bold tracking-tight text-slate-900">
+              Admin Dashboard
+            </h1>
           </div>
 
           <button
@@ -83,8 +128,12 @@ function AdminPage() {
       <section className="mx-auto max-w-6xl px-6 py-10 sm:px-8 lg:py-14">
         <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-sm font-medium text-slate-500">Content library</p>
-            <h2 className="mt-1 text-3xl font-semibold tracking-tight">Posts</h2>
+            <p className="text-sm font-medium text-slate-500">
+              Content library
+            </p>
+            <h2 className="mt-1 text-3xl font-semibold tracking-tight">
+              Posts
+            </h2>
           </div>
 
           <button
@@ -96,41 +145,54 @@ function AdminPage() {
         </div>
 
         {loading ? (
-          <p className="rounded-2xl border border-slate-200 bg-white px-5 py-6 text-sm text-slate-500">Loading posts...</p>
+          <p className="rounded-2xl border border-slate-200 bg-white px-5 py-6 text-sm text-slate-500">
+            Loading posts...
+          </p>
         ) : (
-          <div className="space-y-4">
-            {posts.map((post) => (
-              <article
-                key={post.id}
-                className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition hover:border-amber-200 hover:shadow-md sm:p-6"
-              >
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <h3 className="font-semibold text-slate-900">{post.title}</h3>
+          <div className="space-y-10">
+            <section>
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-slate-900">
+                  Published
+                </h2>
 
-                    <p className="mt-2 text-sm text-slate-500">
-                      {new Date(post.created_at).toLocaleDateString()}
-                    </p>
-                  </div>
+                <span className="text-sm font-medium text-slate-500">
+                  {publishedPosts.length}
+                </span>
+              </div>
 
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => navigate(`/admin/posts/${post.id}/edit`)}
-                      className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-900 hover:text-slate-900"
-                    >
-                      Edit
-                    </button>
-
-                    <button
-                      onClick={() => handleDelete(post.id)}
-                      className="rounded-full border border-red-100 px-4 py-2 text-sm font-semibold text-red-600 transition hover:border-red-200 hover:bg-red-50"
-                    >
-                      Delete
-                    </button>
-                  </div>
+              {publishedPosts.length > 0 ? (
+                <div className="space-y-4">
+                  {publishedPosts.map(renderPost)}
                 </div>
-              </article>
-            ))}
+              ) : (
+                <p className="rounded-2xl border border-dashed border-slate-300 bg-white px-5 py-6 text-sm text-slate-500">
+                  No published posts yet.
+                </p>
+              )}
+            </section>
+
+            <section>
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-slate-900">
+                  Drafts
+                </h2>
+
+                <span className="text-sm font-medium text-slate-500">
+                  {draftPosts.length}
+                </span>
+              </div>
+
+              {draftPosts.length > 0 ? (
+                <div className="space-y-4">
+                  {draftPosts.map(renderPost)}
+                </div>
+              ) : (
+                <p className="rounded-2xl border border-dashed border-slate-300 bg-white px-5 py-6 text-sm text-slate-500">
+                  No drafts yet.
+                </p>
+              )}
+            </section>
           </div>
         )}
       </section>

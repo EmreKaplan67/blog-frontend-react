@@ -25,7 +25,7 @@ function EditPostPage() {
       try {
         // We don't have GET /posts/{id}, so fetch the list
         // and find the matching post for now.
-        const response = await apiFetch("/posts?limit=50&offset=0");
+        const response = await apiFetch("/admin/posts?limit=50&offset=0");
 
         if (!response.ok) {
           throw new Error("Failed to load post.");
@@ -53,7 +53,10 @@ function EditPostPage() {
     fetchPost();
   }, [id]);
 
-  const handleSubmit = async (event: React.FormEvent) => {
+  const handleSave = async (
+    event: React.FormEvent,
+    action: "draft" | "publish",
+  ) => {
     event.preventDefault();
 
     if (!id) {
@@ -64,7 +67,8 @@ function EditPostPage() {
     setSaving(true);
 
     try {
-      const response = await apiFetch(`/posts/${id}`, {
+      // First save the current form fields.
+      const updateResponse = await apiFetch(`/posts/${id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -76,16 +80,31 @@ function EditPostPage() {
         }),
       });
 
-      if (!response.ok) {
-        const responseText = await response.text();
+      if (!updateResponse.ok) {
+        const responseText = await updateResponse.text();
         throw new Error(responseText || "Failed to update post.");
+      }
+
+      // Then set the desired status.
+      const statusResponse = await apiFetch(
+        `/posts/${id}/${action === "publish" ? "publish" : "draft"}`,
+        {
+          method: "POST",
+        },
+      );
+
+      if (!statusResponse.ok) {
+        const responseText = await statusResponse.text();
+
+        throw new Error(
+          responseText ||
+            `Failed to ${action === "publish" ? "publish" : "save as draft"}.`,
+        );
       }
 
       navigate("/admin");
     } catch (error) {
-      setError(
-        error instanceof Error ? error.message : "Unable to update post.",
-      );
+      setError(error instanceof Error ? error.message : "Unable to save post.");
     } finally {
       setSaving(false);
     }
@@ -94,7 +113,9 @@ function EditPostPage() {
   if (loading) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-slate-100 px-6 py-10">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-amber-600">Loading post...</p>
+        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-amber-600">
+          Loading post...
+        </p>
       </main>
     );
   }
@@ -102,9 +123,14 @@ function EditPostPage() {
   if (error && !title) {
     return (
       <main className="min-h-screen bg-slate-100 px-6 py-10">
-        <p className="mx-auto max-w-3xl rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-red-700">{error}</p>
+        <p className="mx-auto max-w-3xl rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-red-700">
+          {error}
+        </p>
 
-        <button onClick={() => navigate("/admin")} className="mx-auto mt-5 block font-semibold text-slate-700 underline">
+        <button
+          onClick={() => navigate("/admin")}
+          className="mx-auto mt-5 block font-semibold text-slate-700 underline"
+        >
           Back to dashboard
         </button>
       </main>
@@ -125,15 +151,21 @@ function EditPostPage() {
       </header>
 
       <section className="mx-auto max-w-3xl px-6 py-8">
-        <p className="mb-3 text-xs font-bold uppercase tracking-[0.24em] text-amber-600">Content studio</p>
-        <h1 className="mb-8 text-4xl font-semibold tracking-tight">Edit Post</h1>
+        <p className="mb-3 text-xs font-bold uppercase tracking-[0.24em] text-amber-600">
+          Content studio
+        </p>
+        <h1 className="mb-8 text-4xl font-semibold tracking-tight">
+          Edit Post
+        </h1>
 
         <form
-          onSubmit={handleSubmit}
+          onSubmit={(event) => handleSave(event, "draft")}
           className="space-y-7 rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xl shadow-slate-900/5 sm:p-8"
         >
           <div>
-            <label className="mb-2 block text-sm font-bold text-slate-700">Title</label>
+            <label className="mb-2 block text-sm font-bold text-slate-700">
+              Title
+            </label>
 
             <input
               type="text"
@@ -145,7 +177,9 @@ function EditPostPage() {
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-bold text-slate-700">Content</label>
+            <label className="mb-2 block text-sm font-bold text-slate-700">
+              Content
+            </label>
 
             <textarea
               value={content}
@@ -157,7 +191,9 @@ function EditPostPage() {
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-bold text-slate-700">Image URL</label>
+            <label className="mb-2 block text-sm font-bold text-slate-700">
+              Image URL
+            </label>
 
             <input
               type="url"
@@ -168,15 +204,29 @@ function EditPostPage() {
             />
           </div>
 
-          {error && <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
+          {error && (
+            <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {error}
+            </p>
+          )}
 
-          <button
-            type="submit"
-            disabled={saving}
-            className="w-full rounded-full bg-slate-900 px-4 py-3.5 font-bold text-white shadow-lg shadow-slate-900/10 transition hover:bg-amber-600 disabled:cursor-wait disabled:opacity-50"
-          >
-            {saving ? "Saving..." : "Save Changes"}
-          </button>
+          <div className="flex gap-3">
+            <button
+              type="submit"
+              disabled={saving}
+              className="rounded-full bg-slate-900 px-5 py-3 text-sm font-bold text-white transition hover:bg-amber-600 disabled:cursor-wait disabled:opacity-50"
+            >
+              {saving ? "Saving..." : "Save Draft"}
+            </button>
+            <button
+              type="button"
+              onClick={(event) => handleSave(event, "publish")}
+              disabled={saving}
+              className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition hover:border-slate-900 hover:text-slate-900 disabled:cursor-wait disabled:opacity-50"
+            >
+              {saving ? "Publishing..." : "Publish"}
+            </button>
+          </div>
         </form>
       </section>
     </main>

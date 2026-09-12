@@ -16,7 +16,10 @@ function CreatePostPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleSubmit = async (event: React.FormEvent) => {
+  const handleSubmit = async (
+    event: React.FormEvent,
+    action: "draft" | "publish",
+  ) => {
     event.preventDefault();
 
     setError("");
@@ -45,6 +48,7 @@ function CreatePostPage() {
         const fileExtension = imageFile.name.includes(".")
           ? `.${imageFile.name.split(".").pop()?.toLowerCase()}`
           : "";
+
         const fileName = `${session.user.id}/${crypto.randomUUID()}${fileExtension}`;
 
         const { error: uploadError } = await supabase.storage
@@ -80,9 +84,29 @@ function CreatePostPage() {
 
       if (!response.ok) {
         const responseText = await response.text();
+
         throw new Error(
-          responseText || `Failed to create post (${response.status})`
+          responseText || `Failed to create post (${response.status})`,
         );
+      }
+
+      const createdPost = await response.json();
+
+      if (action === "publish") {
+        const publishResponse = await apiFetch(
+          `/posts/${createdPost.id}/publish`,
+          {
+            method: "POST",
+          },
+        );
+
+        if (!publishResponse.ok) {
+          const responseText = await publishResponse.text();
+
+          throw new Error(
+            responseText || "Post was saved, but could not be published.",
+          );
+        }
       }
 
       navigate("/admin");
@@ -90,7 +114,7 @@ function CreatePostPage() {
       setError(
         submitError instanceof Error
           ? submitError.message
-          : "Unable to create post."
+          : "Unable to create post.",
       );
     } finally {
       setLoading(false);
@@ -111,15 +135,21 @@ function CreatePostPage() {
       </header>
 
       <section className="mx-auto max-w-3xl px-6 py-8">
-        <p className="mb-3 text-xs font-bold uppercase tracking-[0.24em] text-amber-600">Content studio</p>
-        <h1 className="mb-8 text-4xl font-semibold tracking-tight">Create New Post</h1>
+        <p className="mb-3 text-xs font-bold uppercase tracking-[0.24em] text-amber-600">
+          Content studio
+        </p>
+        <h1 className="mb-8 text-4xl font-semibold tracking-tight">
+          Create New Post
+        </h1>
 
         <form
-          onSubmit={handleSubmit}
+          onSubmit={(event) => handleSubmit(event, "draft")}
           className="space-y-7 rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xl shadow-slate-900/5 sm:p-8"
         >
           <div>
-            <label className="mb-2 block text-sm font-bold text-slate-700">Title</label>
+            <label className="mb-2 block text-sm font-bold text-slate-700">
+              Title
+            </label>
 
             <input
               type="text"
@@ -132,7 +162,9 @@ function CreatePostPage() {
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-bold text-slate-700">Content</label>
+            <label className="mb-2 block text-sm font-bold text-slate-700">
+              Content
+            </label>
 
             <textarea
               value={content}
@@ -145,7 +177,9 @@ function CreatePostPage() {
           </div>
 
           <div>
-            <label className="mb-3 block text-sm font-bold text-slate-700">Image</label>
+            <label className="mb-3 block text-sm font-bold text-slate-700">
+              Image
+            </label>
 
             <div className="mb-4 flex rounded-xl border border-slate-200 bg-slate-50 p-1">
               <button
@@ -193,15 +227,30 @@ function CreatePostPage() {
             )}
           </div>
 
-          {error && <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
+          {error && (
+            <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {error}
+            </p>
+          )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-full bg-slate-900 px-4 py-3.5 font-bold text-white shadow-lg shadow-slate-900/10 transition hover:bg-amber-600 disabled:cursor-wait disabled:opacity-50"
-          >
-            {loading ? "Publishing..." : "Publish Post"}
-          </button>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 rounded-full border border-slate-200 bg-white px-4 py-3.5 font-bold text-slate-700 transition hover:border-slate-900 hover:text-slate-900 disabled:cursor-wait disabled:opacity-50"
+            >
+              {loading ? "Saving..." : "Save Draft"}
+            </button>
+
+            <button
+              type="button"
+              disabled={loading}
+              onClick={(event) => handleSubmit(event, "publish")}
+              className="flex-1 rounded-full bg-slate-900 px-4 py-3.5 font-bold text-white shadow-lg shadow-slate-900/10 transition hover:bg-amber-600 disabled:cursor-wait disabled:opacity-50"
+            >
+              {loading ? "Publishing..." : "Publish"}
+            </button>
+          </div>
         </form>
       </section>
     </main>
