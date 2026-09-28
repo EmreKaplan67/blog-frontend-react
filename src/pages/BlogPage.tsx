@@ -10,7 +10,7 @@ function BlogPage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState("");
   const [hasMore, setHasMore] = useState(true);
-  const [loadingMessage, setLoadingMessage] = useState("Connecting to the story server...")
+  const [loadingMessage, setLoadingMessage] = useState("Connecting to the story server, this might take a while...")
 
   const fetchPosts = async (offset: number) => {
     const response = await fetch(
@@ -46,11 +46,11 @@ function BlogPage() {
 
     const timer1 = setTimeout(() => {
       setLoadingMessage("Waking up the story server...");
-    }, 3000)
+    }, 5000)
 
     const timer2 = setTimeout(() => {
       setLoadingMessage("Loading the stories...")
-    }, 8000)
+    }, 10000)
 
     return () => {
       clearTimeout(timer1);
@@ -82,8 +82,6 @@ function BlogPage() {
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-amber-800">
           {loadingMessage}
         </p>
-        <br/>
-        <small>The server may take a little longer to start after being inactive.</small>
       </main>
     );
   }
