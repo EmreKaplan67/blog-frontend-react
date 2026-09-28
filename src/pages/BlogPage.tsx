@@ -82,6 +82,7 @@ function BlogPage() {
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-amber-800">
           {loadingMessage}
         </p>
+        <br/>
         <small>The server may take a little longer to start after being inactive.</small>
       </main>
     );
